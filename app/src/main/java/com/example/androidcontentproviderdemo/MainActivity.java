@@ -16,7 +16,11 @@ import android.view.View;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,10 +43,37 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onClick: floating action button started");
                 String[] projection = {ContactsContract.Contacts.DISPLAY_NAME_PRIMARY};
 
+                // data retrieval using a Content Resolver provided below only works for API 22 or earlier
+
+                // content resolver provides access to data for the client (MainActivity)
+                // and is responsible for requesting data on the client's behalf
+                // The content resolver gets the data from the appropriate Content Provider, which
+                // ultimately knows how and where to get data from a data source, e.g. a
+                // database; these connections tend to be more efficient for large numbers of clients
+
+                // the content resolver (a singleton) uses an Authority as part of the URI to decide
+                // which content provider to query
                 ContentResolver contentResolver = getContentResolver();
+
+                // a cursor provides read-write access to a data retrieved from a query
                 Cursor cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI,
                         projection, null, null,
                         ContactsContract.Contacts.DISPLAY_NAME_PRIMARY);
+
+                if (cursor != null){
+                    List<String> contacts = new ArrayList<>();
+
+                    // cursor is currently positioned before the first entry
+                    while (cursor.moveToNext()){
+                        contacts.add(cursor.getString(cursor.getColumnIndex(
+                                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)));
+                    }
+                    cursor.close();
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                            MainActivity.this, R.layout.contact_detail, R.id.name, contacts);
+                    contactNames.setAdapter(adapter);
+                }
+                Log.d(TAG, "onClick: FAB ended");
             }
         });
     }
