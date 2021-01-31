@@ -10,5 +10,8 @@ API 23 and above requires the app to request Dangerous Permissions when it is ru
 installed. Such permissions can be revoked by the user.
 
 This also means that the app behaviour when permissions are denied in addition to when it was granted.
-The user's choice can be set as a default ("don't ask again") which might also affect app 
-behaviour when the app restarts at some other point.
+If the user denies permission then the app will, when restarted, ask the user again for permission. 
+ At this point, a "don't ask again" option appears and continues to appear until the user grants 
+ permission. If a user grants permissions then they would not normally be asked again and thus
+  the app should retain the choice on restart. The granted permission can be revoked from the 
+  Android Settings menu.

@@ -20,6 +20,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +29,9 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private ListView contactNames;
-    public static final int REQUEST_CODE_CONTACTS = 1;
+    public static final int REQUEST_CODE_READ_CONTACTS = 1;
     private static boolean READ_CONTACTS_GRANTED = false;
+    FloatingActionButton fab = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +47,8 @@ public class MainActivity extends AppCompatActivity {
 
         // the above can be replaced with a static import (READ_CONTACTS instead of Manifest.permission.READ_CONTACTS)
         // use them very sparingly!; difficult to read and debug)
-//        int hasReadContactPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS);
+        // IDE should ask to import the required static
+//        int hasReadContactPermission = ContextCompat.checkSelfPermission(this, READ_CONTACTS);
 
         Log.d(TAG, "onCreate: checkSelfPermission: " + hasReadContactPermission);
         if (hasReadContactPermission == PackageManager.PERMISSION_GRANTED){
@@ -55,46 +58,53 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onCreate: requesting permission");
             // call appropriate request method based on Android version;
             // note that onCreate does not wait for a decision so a callback from requestPermissions() is required, below
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_CODE_CONTACTS);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_CODE_READ_CONTACTS);
         }
 
-        FloatingActionButton fab = findViewById(R.id.fab);
+        fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "onClick: floating action button started");
-                String[] projection = {ContactsContract.Contacts.DISPLAY_NAME_PRIMARY};
 
-                // data retrieval using a Content Resolver provided below only works for API 22 or earlier
+                if (!READ_CONTACTS_GRANTED){
+                    Snackbar.make(view, "Contacts permissions required to progress further", Snackbar.LENGTH_LONG)
+                            .setAction("Enable contacts permission", null).show();
+                } else {
+                    String[] projection = {ContactsContract.Contacts.DISPLAY_NAME_PRIMARY};
 
-                // content resolver provides access to data for the client (MainActivity)
-                // and is responsible for requesting data on the client's behalf
-                // The content resolver gets the data from the appropriate Content Provider, which
-                // ultimately knows how and where to get data from a data source, e.g. a
-                // database; these connections tend to be more efficient for large numbers of clients
+                    // data retrieval using a Content Resolver provided below only works for API 22 or earlier
 
-                // the content resolver (a singleton) uses an Authority as part of the URI to decide
-                // which content provider to query
-                ContentResolver contentResolver = getContentResolver();
+                    // content resolver provides access to data for the client (MainActivity)
+                    // and is responsible for requesting data on the client's behalf
+                    // The content resolver gets the data from the appropriate Content Provider, which
+                    // ultimately knows how and where to get data from a data source, e.g. a
+                    // database; these connections tend to be more efficient for large numbers of clients
 
-                // a cursor provides read-write access to a data retrieved from a query
-                Cursor cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI,
-                        projection, null, null,
-                        ContactsContract.Contacts.DISPLAY_NAME_PRIMARY);
+                    // the content resolver (a singleton) uses an Authority as part of the URI to decide
+                    // which content provider to query
+                    ContentResolver contentResolver = getContentResolver();
 
-                if (cursor != null){
-                    List<String> contacts = new ArrayList<>();
+                    // a cursor provides read-write access to a data retrieved from a query
+                    Cursor cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI,
+                            projection, null, null,
+                            ContactsContract.Contacts.DISPLAY_NAME_PRIMARY);
 
-                    // cursor is currently positioned before the first entry
-                    while (cursor.moveToNext()){
-                        contacts.add(cursor.getString(cursor.getColumnIndex(
-                                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)));
+                    if (cursor != null){
+                        List<String> contacts = new ArrayList<>();
+
+                        // cursor is currently positioned before the first entry
+                        while (cursor.moveToNext()){
+                            contacts.add(cursor.getString(cursor.getColumnIndex(
+                                    ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)));
+                        }
+                        cursor.close();
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                MainActivity.this, R.layout.contact_detail, R.id.name, contacts);
+                        contactNames.setAdapter(adapter);
                     }
-                    cursor.close();
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                            MainActivity.this, R.layout.contact_detail, R.id.name, contacts);
-                    contactNames.setAdapter(adapter);
                 }
+
                 Log.d(TAG, "onClick: FAB ended");
             }
         });
@@ -103,10 +113,11 @@ public class MainActivity extends AppCompatActivity {
 
     // callback to requestPermissions()
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(
+            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult: started");
         switch (requestCode) {
-            case REQUEST_CODE_CONTACTS: {
+            case REQUEST_CODE_READ_CONTACTS: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                     Log.d(TAG, "onRequestPermissionsResult: granted");
                     READ_CONTACTS_GRANTED = true;
@@ -114,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(TAG, "onRequestPermissionsResult: denied");
                     READ_CONTACTS_GRANTED = false;
                 }
+//                fab.setEnabled(READ_CONTACTS_GRANTED);
             }
         }
         Log.d(TAG, "onRequestPermissionsResult: ended");
