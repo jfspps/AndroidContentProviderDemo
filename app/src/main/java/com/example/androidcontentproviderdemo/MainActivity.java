@@ -1,23 +1,25 @@
 package com.example.androidcontentproviderdemo;
 
+import android.Manifest;
 import android.content.ContentResolver;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
 import android.provider.ContactsContract;
 import android.util.Log;
-import android.view.View;
-
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private ListView contactNames;
+    public static final int REQUEST_CODE_CONTACTS = 1;
+    private static boolean READ_CONTACTS_GRANTED = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +39,24 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         contactNames = (ListView) findViewById(R.id.contact_names);
+
+        // check the version of Android with ContextCompat and on success, run checkSelfPermission
+        int hasReadContactPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS);
+
+        // the above can be replaced with a static import (READ_CONTACTS instead of Manifest.permission.READ_CONTACTS)
+        // use them very sparingly!; difficult to read and debug)
+//        int hasReadContactPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS);
+
+        Log.d(TAG, "onCreate: checkSelfPermission: " + hasReadContactPermission);
+        if (hasReadContactPermission == PackageManager.PERMISSION_GRANTED){
+            Log.d(TAG, "onCreate: permission granted");
+            READ_CONTACTS_GRANTED = true;
+        } else {
+            Log.d(TAG, "onCreate: requesting permission");
+            // call appropriate request method based on Android version;
+            // note that onCreate does not wait for a decision so a callback from requestPermissions() is required, below
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_CODE_CONTACTS);
+        }
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -76,6 +98,25 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onClick: FAB ended");
             }
         });
+        Log.d(TAG, "onCreate: ended");
+    }
+
+    // callback to requestPermissions()
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d(TAG, "onRequestPermissionsResult: started");
+        switch (requestCode) {
+            case REQUEST_CODE_CONTACTS: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    Log.d(TAG, "onRequestPermissionsResult: granted");
+                    READ_CONTACTS_GRANTED = true;
+                } else {
+                    Log.d(TAG, "onRequestPermissionsResult: denied");
+                    READ_CONTACTS_GRANTED = false;
+                }
+            }
+        }
+        Log.d(TAG, "onRequestPermissionsResult: ended");
     }
 
     @Override
