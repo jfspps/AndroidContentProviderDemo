@@ -2,10 +2,14 @@ package com.example.androidcontentproviderdemo;
 
 import android.Manifest;
 import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,7 +35,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private ListView contactNames;
     public static final int REQUEST_CODE_READ_CONTACTS = 1;
-    private static boolean READ_CONTACTS_GRANTED = false;
     FloatingActionButton fab = null;
 
     @Override
@@ -54,12 +57,12 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate: checkSelfPermission: " + hasReadContactPermission);
         if (hasReadContactPermission == PackageManager.PERMISSION_GRANTED){
             Log.d(TAG, "onCreate: permission granted");
-            READ_CONTACTS_GRANTED = true;
         } else {
             Log.d(TAG, "onCreate: requesting permission");
             // call appropriate request method based on Android version;
             // note that onCreate does not wait for a decision so a callback from requestPermissions() is required, below
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_CODE_READ_CONTACTS);
+            ActivityCompat.requestPermissions(
+                    this, new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_CODE_READ_CONTACTS);
         }
 
         fab = findViewById(R.id.fab);
@@ -68,12 +71,33 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Log.d(TAG, "onClick: floating action button started");
 
-                if (!READ_CONTACTS_GRANTED){
+                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED){
                     Snackbar.make(view, "Contacts permissions required", Snackbar.LENGTH_INDEFINITE)
                             .setAction("Grant access", new View.OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    Toast.makeText(MainActivity.this, "Snackbar clicked", Toast.LENGTH_SHORT).show();
+                                    Log.d(TAG, "onClick: snackBar onClick()");
+
+                                    // decide if we should show a UI element which rationalises why permissions are required
+                                    // returns false if the user clicked "do not ask again" (in which case an Intent directs the user to the Android settings menu
+                                    if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
+                                            Manifest.permission.READ_CONTACTS)){
+                                        Log.d(TAG, "onClick: calling requestPermissions()");
+                                        ActivityCompat.requestPermissions(MainActivity.this,
+                                                new String[] {Manifest.permission.READ_CONTACTS}, REQUEST_CODE_READ_CONTACTS);
+                                    } else {
+                                        Log.d(TAG, "onClick: snackBar() onClick(); going to app settings");
+                                        Intent intent = new Intent();
+                                        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+
+                                        // build this app's package URI needed for intent:
+                                        // "package:com.example.androidcontentproviderdemo"
+                                        Uri uri = Uri.fromParts("package", MainActivity.this.getPackageName(), null);
+                                        Log.d(TAG, "Intent URI: " + uri.toString());
+                                        intent.setData(uri);
+                                        MainActivity.this.startActivity(intent);
+                                    }
+                                    Log.d(TAG, "onClick: snackBar ended");
                                 }
                             }).show();
                 } else {
@@ -126,12 +150,9 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_CODE_READ_CONTACTS: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                     Log.d(TAG, "onRequestPermissionsResult: granted");
-                    READ_CONTACTS_GRANTED = true;
                 } else {
                     Log.d(TAG, "onRequestPermissionsResult: denied");
-                    READ_CONTACTS_GRANTED = false;
                 }
-//                fab.setEnabled(READ_CONTACTS_GRANTED);
             }
         }
         Log.d(TAG, "onRequestPermissionsResult: ended");
