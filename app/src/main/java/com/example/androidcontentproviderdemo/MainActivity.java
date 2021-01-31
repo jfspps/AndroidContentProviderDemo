@@ -12,6 +12,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -68,8 +69,13 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onClick: floating action button started");
 
                 if (!READ_CONTACTS_GRANTED){
-                    Snackbar.make(view, "Contacts permissions required to progress further", Snackbar.LENGTH_LONG)
-                            .setAction("Enable contacts permission", null).show();
+                    Snackbar.make(view, "Contacts permissions required", Snackbar.LENGTH_INDEFINITE)
+                            .setAction("Grant access", new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    Toast.makeText(MainActivity.this, "Snackbar clicked", Toast.LENGTH_SHORT).show();
+                                }
+                            }).show();
                 } else {
                     String[] projection = {ContactsContract.Contacts.DISPLAY_NAME_PRIMARY};
 
