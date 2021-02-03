@@ -2,7 +2,6 @@ package com.example.androidcontentproviderdemo;
 
 import android.Manifest;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -16,7 +15,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -47,20 +45,21 @@ public class MainActivity extends AppCompatActivity {
         contactNames = (ListView) findViewById(R.id.contact_names);
 
         // check the version of Android with ContextCompat and on success, run checkSelfPermission
-        int hasReadContactPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS);
+        int hasReadContactPermission = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.READ_CONTACTS);
 
-        // the above can be replaced with a static import (READ_CONTACTS instead of Manifest.permission.READ_CONTACTS)
+        // the above can be replaced with a static import (READ_CONTACTS instead of
+        // Manifest.permission.READ_CONTACTS)
         // use them very sparingly!; difficult to read and debug)
         // IDE should ask to import the required static
 //        int hasReadContactPermission = ContextCompat.checkSelfPermission(this, READ_CONTACTS);
 
         Log.d(TAG, "onCreate: checkSelfPermission: " + hasReadContactPermission);
-        if (hasReadContactPermission == PackageManager.PERMISSION_GRANTED){
-            Log.d(TAG, "onCreate: permission granted");
-        } else {
+        if (hasReadContactPermission != PackageManager.PERMISSION_GRANTED){
             Log.d(TAG, "onCreate: requesting permission");
             // call appropriate request method based on Android version;
-            // note that onCreate does not wait for a decision so a callback from requestPermissions() is required, below
+            // note that onCreate does not wait for a decision so a callback from
+            // requestPermissions() is required, below
             ActivityCompat.requestPermissions(
                     this, new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_CODE_READ_CONTACTS);
         }
@@ -71,15 +70,18 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Log.d(TAG, "onClick: floating action button started");
 
-                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED){
+                if (ContextCompat.checkSelfPermission(MainActivity.this,
+                        Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED){
                     Snackbar.make(view, "Contacts permissions required", Snackbar.LENGTH_INDEFINITE)
                             .setAction("Grant access", new View.OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
                                     Log.d(TAG, "onClick: snackBar onClick()");
 
-                                    // decide if we should show a UI element which rationalises why permissions are required
-                                    // returns false if the user clicked "do not ask again" (in which case an Intent directs the user to the Android settings menu
+                                    // decide if we should show a UI element which rationalises why
+                                    // permissions are required; returns false if the user clicked
+                                    // "do not ask again" (in which case an Intent directs the user
+                                    // to the Android settings menu
                                     if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
                                             Manifest.permission.READ_CONTACTS)){
                                         Log.d(TAG, "onClick: calling requestPermissions()");
@@ -92,7 +94,8 @@ public class MainActivity extends AppCompatActivity {
 
                                         // build this app's package URI needed for intent:
                                         // "package:com.example.androidcontentproviderdemo"
-                                        Uri uri = Uri.fromParts("package", MainActivity.this.getPackageName(), null);
+                                        Uri uri = Uri.fromParts(
+                                                "package", MainActivity.this.getPackageName(), null);
                                         Log.d(TAG, "Intent URI: " + uri.toString());
                                         intent.setData(uri);
                                         MainActivity.this.startActivity(intent);
